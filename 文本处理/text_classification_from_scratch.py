@@ -304,6 +304,3 @@ end_to_end_model.compile(
 
 # Test it with `raw_test_ds`, which yields raw strings
 end_to_end_model.evaluate(raw_test_ds)
-
-predictions = end_to_end_model.predict('Test it with')
-#print(predictions)

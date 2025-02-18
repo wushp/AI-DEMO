@@ -29,7 +29,17 @@ import tensorflow as tf
 import numpy as np
 from keras import layers
 
+
+
+samples_to_predict = tf.data.Dataset.from_tensor_slices([("x","y")])
+
+#for text_batch, label_batch in samples_to_predict.take(1):
+#    for i in range(5):
+#        print(text_batch.numpy()[i])
+#        print(label_batch.numpy()[i])
+
 model = keras.models.load_model('/workspaces/AI-DEMO/文本处理/text_classification_from_scratch.keras')
 
-dataset = tf.data.Dataset.from_tensor_slices([("The movie was great!",'')])
-model.predict(dataset)
+samples_to_predict = tf.data.Dataset.from_tensor_slices([("x","y")])
+predictions = model.predict(samples_to_predict)
+print(predictions)
