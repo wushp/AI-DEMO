@@ -8,7 +8,9 @@ from collections import OrderedDict
 from os import path, stat, remove, makedirs
 from telethon.sessions import StringSession
 import json
-import os
+import uuid
+import os,time
+import sys
 
 ####################################################################################################
 
@@ -16,45 +18,18 @@ import os
 #os.environ['http_proxy']="127.0.0.1:33210"
 #os.environ['https_proxy']="127.0.0.1:33210"
 # Client parameters
+
+
 API_ID   = 1307728
 API_HASH = '0fdacb025cf6bfa8585007b565920454'
-PHONE_NUM    = '85270337165'
-
-# Chat to inspect
+LOG_NEIRONG = [];
 CHAT_LINK  = "https://t.me/livedoubtclearing"
-
+code = ''
+pw = ''
+current_dir = os.path.dirname(os.path.abspath(__file__))
 ####################################################################################################
 
 ### Telegram basic functions ###
-
-# Connect and Log-in/Sign-in to telegram API
-def tlg_connect(api_id, api_hash, phone_number):
-	'''Connect and Log-in/Sign-in to Telegram API. Request Sign-in code for first execution'''
-	print('Trying to connect to Telegram...')
-	#client = TelegramClient("Session", api_id, api_hash,proxy = ('http', '127.0.0.1', 33210))
-	sessionid = StringSession();
-	client = TelegramClient(sessionid, api_id, api_hash)
-	if not client.start():
-		print('Could not connect to Telegram servers.')
-		return None
-	else:
-		if not client.is_user_authorized():
-			print('Session file not found. This is the first run, sending code request...')
-			client.sign_in(phone_number)
-			self_user = None
-			while self_user is None:
-				code = input('Enter the code you just received: ')
-				try:
-					self_user = client.sign_in(code=code)
-				except SessionPasswordNeededError:
-					pw = getpass('Two step verification is enabled. Please enter your password: ')
-					self_user = client.sign_in(password=pw)
-					if self_user is None:
-						return None
-	print('Sign in success.')
-	print()
-	return client
-
 
 # Get basic info from a chat
 def tlg_get_basic_info(client, chat):
@@ -222,20 +197,81 @@ def json_write_list(file, list):
 		print("    Error: You are trying to write too much data")
 
 ####################################################################################################
+# Connect and Log-in/Sign-in to telegram API
+
+# PHONE_NUM    = '855314086097'
+# SESSION_UUID = '1';
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# LOG_PATH = current_dir+"/"+SESSION_UUID;
+# os.makedirs(LOG_PATH, exist_ok=True)
+# os.makedirs('parent_folder/child_folder', exist_ok=True)
+
+def tlg_connect(api_id, api_hash, phone_number,LOG_PATH):
+	def get_code():
+		for i in range(60):
+			print('读取code'+LOG_PATH+'/code.txt')
+			if os.path.exists(LOG_PATH+'/code.txt'):
+				with open(LOG_PATH+'/code.txt', 'r') as file:
+					code = file.read()  # 读取文件内容
+					LOG_NEIRONG.append('code='+code);
+					LOG_NEIRONG.append('\n')
+					break;
+			time.sleep(1)
+		print('获取到code'+code)
+		return code
+
+	def get_password():
+		for i in range(60):
+			if os.path.exists(LOG_PATH+'/mima.txt'):
+				with open(LOG_PATH+'/mima.txt', 'r') as file:
+					pw = file.read()  # 读取文件内容
+					LOG_NEIRONG.append('pw='+pw);
+					LOG_NEIRONG.append('\n')
+					break;
+			time.sleep(1)
+		print('获取到密码'+pw)
+		return pw;
+
+	print('Trying to connect to Telegram...')
+	client = TelegramClient(phone_number, api_id, api_hash)
+	LOG_NEIRONG.append('phone='+phone_number)
+	LOG_NEIRONG.append('\n')
+	try:
+		if not client.start(phone=phone_number,code_callback=get_code,password=get_password):
+			print('Could not connect to Telegram servers.')
+			return None
+		else:
+			if not client.is_user_authorized():
+				return None
+		print('Sign in success.')
+	except Exception as e:
+		LOG_NEIRONG.append('error='+str(e))
+		LOG_NEIRONG.append('\n')
+	return client
 
 ### Main function ###
 def main():
-	'''Main Function'''
-	print()
-	# Create the client and connect
-	client = tlg_connect(API_ID, API_HASH, PHONE_NUM)
+	#'''Main Function'''
+	# print()
+	# Create the client and connect\
+	SESSION_UUID = sys.argv[1]
+	PHONE_NUM    = sys.argv[2]
+	
+	LOG_PATH = current_dir+"/"+SESSION_UUID;
+	print(SESSION_UUID+'|'+PHONE_NUM+'|'+LOG_PATH)
+	os.makedirs(LOG_PATH, exist_ok=True)
+	os.makedirs('parent_folder/child_folder', exist_ok=True)
+
+	client = tlg_connect(API_ID, API_HASH, PHONE_NUM,LOG_PATH)
 	if client is not None:
-		chat = 'me'
 		for dialog in client.iter_dialogs():
 			print(dialog.name, 'has ID', dialog.id)
+			LOG_NEIRONG.append('room='+str(dialog.id)+'|'+dialog.name)
+			LOG_NEIRONG.append('\n')
 			for message in client.get_messages(dialog.id):
 				print(message.id, message.text)
-			
+				LOG_NEIRONG.append(str(message.id)+message.text)
+				LOG_NEIRONG.append('\n')
     	# Get chat basic info
 		#print('Getting chat basic info...')
 		# chat_info = tlg_get_basic_info(client, CHAT_LINK)
@@ -269,10 +305,17 @@ def main():
 		# json_write_list(fjson_messages, messages)
 
 		print('Proccess completed')
-		print()
-		client.log_out();
+		#client.log_out();
 ####################################################################################################
 
 ### Execute the main function if the file is not an imported module ###
 if __name__ == "__main__":
-	main()
+	try:
+		SESSION_UUID = sys.argv[1]
+		main()
+	except Exception as e:
+		LOG_NEIRONG.append('error='+str(e))
+		LOG_NEIRONG.append('\n')
+	finally:
+		with open(current_dir+'/'+SESSION_UUID+'/out.txt', 'w') as file:
+			file.writelines(LOG_NEIRONG)

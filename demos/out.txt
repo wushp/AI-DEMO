@@ -1,0 +1,6 @@
+phone=855314086097
+code=87501
+code=87501
+code=87501
+error=3 consecutive sign-in attempts failed. Aborting
+error=The key is not registered in the system (caused by GetDialogsRequest)
